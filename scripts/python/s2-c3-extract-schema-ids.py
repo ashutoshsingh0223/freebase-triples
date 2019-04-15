@@ -55,7 +55,7 @@ def main(input_file):
     for domain in domains:
         domain = domain.split("\t")
         mid = domain[0]
-
+        mid = mid.replace("http://rdf.freebase.com/ns", "")
         p = subprocess.Popen(['gawk',
                 "{ fname" + '="'+fname_output+'";' +
                 'if( $1 == "' + mid + '")' + " { print $0 >> fname; } }",
@@ -73,6 +73,7 @@ def main(input_file):
     domains = open(fname_output).readlines()
     for domain in domains:
         hrid = domain.split("\t")[2]
+        hrid = hrid.replace("http://rdf.freebase.com/ns", "")
         if "/base/" not in hrid and hrid.count("/") == 1:
             with open("slices-new/fb-rdf-pred-schema-domains-ids-1", "a") as f:
                 f.write(domain)
@@ -106,6 +107,7 @@ def main(input_file):
     for typ in types:
         typ = typ.split("\t")
         mid = typ[0]
+        mid = mid.replace("http://rdf.freebase.com/ns", "")
         if "</m." in mid:
             p = subprocess.Popen(['gawk',
                     "{ fname" + '="'+fname_output+'";' +
@@ -123,6 +125,7 @@ def main(input_file):
     types = open(fname_output).readlines()
     for typ in types:
         hrid = typ.split("\t")[2]
+        hrid = hrid.replace("http://rdf.freebase.com/ns", "")
         if "/base/" not in hrid and hrid.count("/") == 2:
             with open("slices-new/fb-rdf-pred-schema-types-ids-1", "a") as f:
                 f.write(typ)
@@ -156,6 +159,7 @@ def main(input_file):
     for prop in properties:
         prop = prop.split("\t")
         mid = prop[0]
+        mid = mid.replace("http://rdf.freebase.com/ns", "")
         if "</m." in mid:
             p = subprocess.Popen(['gawk',
                     "{ fname" + '="'+fname_output+'";' +
@@ -173,6 +177,7 @@ def main(input_file):
     properties = open(fname_output).readlines()
     for prop in properties:
         hrid = prop.split("\t")[2]
+        hrid = hrid.replace("http://rdf.freebase.com/ns", "")
         if "/base/" not in hrid and hrid.count("/") == 3:
             with open("slices-new/fb-rdf-pred-schema-properties-ids-1", "a") as f:
                 f.write(prop)
@@ -180,6 +185,49 @@ def main(input_file):
     # 3. Sort alphabetically by the property (the 3rd column)
     subprocess.check_output(['sort -k 3 slices-new/fb-rdf-pred-schema-properties-ids-1 >\
         slices-new/fb-rdf-pred-schema-properties-ids-1-byalpha'], shell=True)
+    
+    
+    
+    
+    # 1. Get the machine id (mid) and the corresponding instance name
+    query_count = 0
+    fname_output_preprocess = "slices-new/fb-rdf-pred-type-object-id-1"
+    fname_input = fname_output_preprocess
+    fname_output = "slices-new/fb-rdf-pred-schema-names-ids"
+
+    t0 = subprocess.check_output(['gdate','+"%s%3N"'], shell=True)
+    print(t0.decode('ascii').strip())
+
+    properties = open('slices-new/fb-rdf-pred-schema-names').readlines()
+    for name in names:
+        name = name.split("\t")
+        mid = name[0]
+        mid = mid.replace("http://rdf.freebase.com/ns", "")
+        if "</m." in mid:
+            p = subprocess.Popen(['gawk',
+                    "{ fname" + '="'+fname_output+'";' +
+                    'if( $1 == "' + mid + '")' + " { print $0 >> fname; } }",
+                    fname_input])
+            p.communicate()
+
+            query_count += 1
+            if query_count % 100 == 0:
+                print(str(query_count) + "\t" + mid)
+    t1 = subprocess.check_output(['gdate','+"%s%3N"'], shell=True)
+    print(t1.decode('ascii').strip())
+
+    # 2. Remove "base" domain names
+    names = open(fname_output).readlines()
+    for name in names:
+        hrid = name.split("\t")[2]
+        hrid = hrid.replace("http://rdf.freebase.com/ns", "")
+        if "/base/" not in hrid and hrid.count("/") == 3:
+            with open("slices-new/fb-rdf-pred-schema-names-ids-1", "a") as f:
+                f.write(prop)
+
+    # 3. Sort alphabetically by the name (the 3rd column)
+    subprocess.check_output(['sort -k 3 slices-new/fb-rdf-pred-schema-names-ids-1 >\
+        slices-new/fb-rdf-pred-schema-names-ids-1-byalpha'], shell=True)
 
 
 if __name__ == '__main__':
